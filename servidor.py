@@ -84,7 +84,7 @@ def convert_file_to_protocol(file_name, method):
             header = "\r\n".join(headers)
             return header.encode() + file_content
     except MethodNotAllowed:
-        print(f'File {file_path} not found')
+        print(f'Method {method} not allowed')
         file_path = f'./error/405.html'
         with open(file_path, 'rb') as file:
             file_content = file.read()
