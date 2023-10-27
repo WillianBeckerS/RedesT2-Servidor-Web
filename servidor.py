@@ -62,9 +62,13 @@ def convert_file_to_protocol(file_name):
             file_content = file.read()
             file_size = len(file_content)
 
+            last_modified_timestamp = os.path.getmtime(file_path)
+            last_modified_date = datetime.datetime.fromtimestamp(last_modified_timestamp, ZoneInfo("Etc/GMT")).strftime('%a, %d %b %Y %H:%M:%S GMT')
+
             headers = [
                 "HTTP/1.1 404 Not Found",
                 f"Date: {datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')}",
+                f"Last-Modified: {last_modified_date}",
                 "Server: ServidorTCPPython/1.0",
                 "Content-Type: text/html",
                 f"Content-Length: {file_size}",
