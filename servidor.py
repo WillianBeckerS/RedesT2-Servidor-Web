@@ -10,6 +10,10 @@ from zoneinfo import ZoneInfo
 from _thread import *
 import threading
 
+class MethodNotAllowed(Exception):
+    "HTTP 405 Method Not Allowed"
+    pass
+
 # thread function
 def threaded(client: socket.socket):
     data = client.recv(4096)
@@ -18,13 +22,15 @@ def threaded(client: socket.socket):
     request_headers = message.split()
     print(request_headers)
 
-    file_data = convert_file_to_protocol(request_headers[1])
+    file_data = convert_file_to_protocol(request_headers[1], request_headers[0])
     client.send(file_data)
     client.close()
 
-def convert_file_to_protocol(file_name):
+def convert_file_to_protocol(file_name, method):
     file_path = f'./files_server{file_name}'
     try:
+        if method != 'GET':
+            raise MethodNotAllowed
         with open(file_path, 'rb') as file:
             file_content = file.read()
             file_size = len(file_content)
@@ -58,6 +64,28 @@ def convert_file_to_protocol(file_name):
     except FileNotFoundError:
         print(f'File {file_path} not found')
         file_path = f'./error/404.html'
+        with open(file_path, 'rb') as file:
+            file_content = file.read()
+            file_size = len(file_content)
+
+            last_modified_timestamp = os.path.getmtime(file_path)
+            last_modified_date = datetime.datetime.fromtimestamp(last_modified_timestamp, ZoneInfo("Etc/GMT")).strftime('%a, %d %b %Y %H:%M:%S GMT')
+
+            headers = [
+                "HTTP/1.1 404 Not Found",
+                f"Date: {datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')}",
+                f"Last-Modified: {last_modified_date}",
+                "Server: ServidorTCPPython/1.0",
+                "Content-Type: text/html",
+                f"Content-Length: {file_size}",
+                "Connection: close",
+                "\r\n"
+            ]
+            header = "\r\n".join(headers)
+            return header.encode() + file_content
+    except MethodNotAllowed:
+        print(f'File {file_path} not found')
+        file_path = f'./error/405.html'
         with open(file_path, 'rb') as file:
             file_content = file.read()
             file_size = len(file_content)
